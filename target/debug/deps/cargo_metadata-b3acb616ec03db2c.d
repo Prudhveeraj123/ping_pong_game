@@ -1,0 +1,11 @@
+C:\Users\prudh\pingpong\target\debug\deps\libcargo_metadata-b3acb616ec03db2c.rmeta: C:\Users\prudh\.cargo\registry\src\index.crates.io-6f17d22bba15001f\cargo_metadata-0.14.2\src\lib.rs C:\Users\prudh\.cargo\registry\src\index.crates.io-6f17d22bba15001f\cargo_metadata-0.14.2\src\dependency.rs C:\Users\prudh\.cargo\registry\src\index.crates.io-6f17d22bba15001f\cargo_metadata-0.14.2\src\diagnostic.rs C:\Users\prudh\.cargo\registry\src\index.crates.io-6f17d22bba15001f\cargo_metadata-0.14.2\src\errors.rs C:\Users\prudh\.cargo\registry\src\index.crates.io-6f17d22bba15001f\cargo_metadata-0.14.2\src\messages.rs
+
+C:\Users\prudh\pingpong\target\debug\deps\libcargo_metadata-b3acb616ec03db2c.rlib: C:\Users\prudh\.cargo\registry\src\index.crates.io-6f17d22bba15001f\cargo_metadata-0.14.2\src\lib.rs C:\Users\prudh\.cargo\registry\src\index.crates.io-6f17d22bba15001f\cargo_metadata-0.14.2\src\dependency.rs C:\Users\prudh\.cargo\registry\src\index.crates.io-6f17d22bba15001f\cargo_metadata-0.14.2\src\diagnostic.rs C:\Users\prudh\.cargo\registry\src\index.crates.io-6f17d22bba15001f\cargo_metadata-0.14.2\src\errors.rs C:\Users\prudh\.cargo\registry\src\index.crates.io-6f17d22bba15001f\cargo_metadata-0.14.2\src\messages.rs
+
+C:\Users\prudh\pingpong\target\debug\deps\cargo_metadata-b3acb616ec03db2c.d: C:\Users\prudh\.cargo\registry\src\index.crates.io-6f17d22bba15001f\cargo_metadata-0.14.2\src\lib.rs C:\Users\prudh\.cargo\registry\src\index.crates.io-6f17d22bba15001f\cargo_metadata-0.14.2\src\dependency.rs C:\Users\prudh\.cargo\registry\src\index.crates.io-6f17d22bba15001f\cargo_metadata-0.14.2\src\diagnostic.rs C:\Users\prudh\.cargo\registry\src\index.crates.io-6f17d22bba15001f\cargo_metadata-0.14.2\src\errors.rs C:\Users\prudh\.cargo\registry\src\index.crates.io-6f17d22bba15001f\cargo_metadata-0.14.2\src\messages.rs
+
+C:\Users\prudh\.cargo\registry\src\index.crates.io-6f17d22bba15001f\cargo_metadata-0.14.2\src\lib.rs:
+C:\Users\prudh\.cargo\registry\src\index.crates.io-6f17d22bba15001f\cargo_metadata-0.14.2\src\dependency.rs:
+C:\Users\prudh\.cargo\registry\src\index.crates.io-6f17d22bba15001f\cargo_metadata-0.14.2\src\diagnostic.rs:
+C:\Users\prudh\.cargo\registry\src\index.crates.io-6f17d22bba15001f\cargo_metadata-0.14.2\src\errors.rs:
+C:\Users\prudh\.cargo\registry\src\index.crates.io-6f17d22bba15001f\cargo_metadata-0.14.2\src\messages.rs:
