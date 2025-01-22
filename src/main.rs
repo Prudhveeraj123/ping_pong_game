@@ -1,6 +1,7 @@
 use ggez::event::{self, EventHandler, KeyCode, KeyMods};
 use ggez::graphics::{self, Color, DrawParam, Mesh, Rect, Text};
 use ggez::{Context, ContextBuilder, GameResult};
+use std::collections::HashSet;
 
 const SCREEN_WIDTH: f32 = 800.0;
 const SCREEN_HEIGHT: f32 = 600.0;
@@ -9,6 +10,8 @@ const PADDLE_HEIGHT: f32 = 100.0;
 const BALL_SIZE: f32 = 20.0;
 const PADDLE_SPEED: f32 = 500.0;
 const BALL_SPEED: f32 = 300.0;
+const DESIRED_FPS: u32 = 60; // Target frame rate
+const COLLISION_TOLERANCE: f32 = 1.0; // Tolerance for edge collisions
 
 struct GameState {
     player1_y: f32,
@@ -19,7 +22,8 @@ struct GameState {
     ball_dy: f32,
     score1: u32,
     score2: u32,
-    game_running: bool, // Tracks whether the game is running
+    game_running: bool,             // Tracks whether the game is running
+    pressed_keys: HashSet<KeyCode>, // Tracks the keys currently pressed
 }
 
 impl GameState {
@@ -34,6 +38,7 @@ impl GameState {
             score1: 0,
             score2: 0,
             game_running: false, // Start with the game stopped
+            pressed_keys: HashSet::new(),
         }
     }
 
@@ -47,46 +52,64 @@ impl GameState {
 
 impl EventHandler for GameState {
     fn update(&mut self, ctx: &mut Context) -> GameResult {
-        if !self.game_running {
-            return Ok(()); // Pause game updates when not running
-        }
+        const FIXED_TIMESTEP: f32 = 1.0 / DESIRED_FPS as f32;
 
-        let delta_time = ggez::timer::delta(ctx).as_secs_f32();
+        while ggez::timer::check_update_time(ctx, DESIRED_FPS) {
+            if self.game_running {
+                // Move player 1 paddle based on key presses
+                if self.pressed_keys.contains(&KeyCode::Up) {
+                    self.player1_y -= PADDLE_SPEED * FIXED_TIMESTEP;
+                    self.player1_y = self.player1_y.max(0.0); // Prevent going off top
+                }
+                if self.pressed_keys.contains(&KeyCode::Down) {
+                    self.player1_y += PADDLE_SPEED * FIXED_TIMESTEP;
+                    self.player1_y = self.player1_y.min(SCREEN_HEIGHT - PADDLE_HEIGHT);
+                    // Prevent going off bottom
+                }
 
-        // Move ball
-        self.ball_x += self.ball_dx * delta_time;
-        self.ball_y += self.ball_dy * delta_time;
+                // Ball movement
+                self.ball_x += self.ball_dx * FIXED_TIMESTEP;
+                self.ball_y += self.ball_dy * FIXED_TIMESTEP;
 
-        // Ball collision with top and bottom
-        if self.ball_y <= 0.0 || self.ball_y + BALL_SIZE >= SCREEN_HEIGHT {
-            self.ball_dy = -self.ball_dy;
-        }
+                // Ball collision with top and bottom
+                if self.ball_y <= COLLISION_TOLERANCE {
+                    self.ball_y = COLLISION_TOLERANCE; // Snap to edge
+                    self.ball_dy = self.ball_dy.abs(); // Reflect downwards
+                } else if self.ball_y + BALL_SIZE >= SCREEN_HEIGHT - COLLISION_TOLERANCE {
+                    self.ball_y = SCREEN_HEIGHT - BALL_SIZE - COLLISION_TOLERANCE; // Snap to edge
+                    self.ball_dy = -self.ball_dy.abs(); // Reflect upwards
+                }
 
-        // Ball collision with paddles
-        if (self.ball_x <= PADDLE_WIDTH
-            && self.ball_y + BALL_SIZE >= self.player1_y
-            && self.ball_y <= self.player1_y + PADDLE_HEIGHT)
-            || (self.ball_x + BALL_SIZE >= SCREEN_WIDTH - PADDLE_WIDTH
-                && self.ball_y + BALL_SIZE >= self.player2_y
-                && self.ball_y <= self.player2_y + PADDLE_HEIGHT)
-        {
-            self.ball_dx = -self.ball_dx;
-        }
+                // Ball collision with paddles
+                if (self.ball_x <= PADDLE_WIDTH
+                    && self.ball_y + BALL_SIZE >= self.player1_y
+                    && self.ball_y <= self.player1_y + PADDLE_HEIGHT)
+                    || (self.ball_x + BALL_SIZE >= SCREEN_WIDTH - PADDLE_WIDTH
+                        && self.ball_y + BALL_SIZE >= self.player2_y
+                        && self.ball_y <= self.player2_y + PADDLE_HEIGHT)
+                {
+                    self.ball_dx = -self.ball_dx;
+                }
 
-        // Ball out of bounds
-        if self.ball_x <= 0.0 {
-            self.score2 += 1;
-            self.reset_ball();
-        } else if self.ball_x + BALL_SIZE >= SCREEN_WIDTH {
-            self.score1 += 1;
-            self.reset_ball();
-        }
+                // Ball out of bounds
+                if self.ball_x <= 0.0 {
+                    self.score2 += 1;
+                    self.reset_ball();
+                } else if self.ball_x + BALL_SIZE >= SCREEN_WIDTH {
+                    self.score1 += 1;
+                    self.reset_ball();
+                }
 
-        // Player 2 AI
-        if self.ball_y > self.player2_y + PADDLE_HEIGHT / 2.0 {
-            self.player2_y += PADDLE_SPEED * delta_time;
-        } else if self.ball_y < self.player2_y + PADDLE_HEIGHT / 2.0 {
-            self.player2_y -= PADDLE_SPEED * delta_time;
+                // Player 2 AI
+                if self.ball_y > self.player2_y + PADDLE_HEIGHT / 2.0 {
+                    self.player2_y += PADDLE_SPEED * FIXED_TIMESTEP;
+                    self.player2_y = self.player2_y.min(SCREEN_HEIGHT - PADDLE_HEIGHT);
+                // Prevent going off bottom
+                } else if self.ball_y < self.player2_y + PADDLE_HEIGHT / 2.0 {
+                    self.player2_y -= PADDLE_SPEED * FIXED_TIMESTEP;
+                    self.player2_y = self.player2_y.max(0.0); // Prevent going off top
+                }
+            }
         }
 
         Ok(())
@@ -137,32 +160,6 @@ impl EventHandler for GameState {
             ),
         )?;
 
-        // Draw buttons
-        let start_button = Text::new("Press S to Start");
-        graphics::draw(
-            ctx,
-            &start_button,
-            (
-                ggez::mint::Point2 {
-                    x: 20.0,
-                    y: SCREEN_HEIGHT - 50.0,
-                },
-                Color::WHITE,
-            ),
-        )?;
-        let stop_button = Text::new("Press P to Stop");
-        graphics::draw(
-            ctx,
-            &stop_button,
-            (
-                ggez::mint::Point2 {
-                    x: SCREEN_WIDTH - 150.0,
-                    y: SCREEN_HEIGHT - 50.0,
-                },
-                Color::WHITE,
-            ),
-        )?;
-
         graphics::draw(ctx, &paddle1, DrawParam::default())?;
         graphics::draw(ctx, &paddle2, DrawParam::default())?;
         graphics::draw(ctx, &ball, DrawParam::default())?;
@@ -179,12 +176,16 @@ impl EventHandler for GameState {
         _repeat: bool,
     ) {
         match keycode {
-            KeyCode::Up => self.player1_y -= PADDLE_SPEED / 60.0,
-            KeyCode::Down => self.player1_y += PADDLE_SPEED / 60.0,
-            KeyCode::S => self.game_running = true, // Start game
+            KeyCode::S => self.game_running = true,  // Start game
             KeyCode::P => self.game_running = false, // Stop game
-            _ => {}
+            _ => {
+                self.pressed_keys.insert(keycode);
+            }
         }
+    }
+
+    fn key_up_event(&mut self, _ctx: &mut Context, keycode: KeyCode, _keymods: KeyMods) {
+        self.pressed_keys.remove(&keycode);
     }
 }
 
