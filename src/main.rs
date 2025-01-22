@@ -1,17 +1,19 @@
 use ggez::event::{self, EventHandler, KeyCode, KeyMods};
-use ggez::graphics::{self, Color, DrawParam, Mesh, Rect, Text};
+use ggez::graphics::{self, Color, DrawParam, Mesh, MeshBuilder, Text};
 use ggez::{Context, ContextBuilder, GameResult};
+use rand::Rng;
 use std::collections::HashSet;
 
 const SCREEN_WIDTH: f32 = 800.0;
 const SCREEN_HEIGHT: f32 = 600.0;
-const PADDLE_WIDTH: f32 = 20.0;
+const PADDLE_WIDTH: f32 = 15.0;
 const PADDLE_HEIGHT: f32 = 100.0;
-const BALL_SIZE: f32 = 20.0;
-const PADDLE_SPEED: f32 = 500.0;
+const BALL_RADIUS: f32 = 10.0;
+const PLAYER_PADDLE_SPEED: f32 = 500.0;
+const AI_PADDLE_SPEED: f32 = 300.0;
 const BALL_SPEED: f32 = 300.0;
-const DESIRED_FPS: u32 = 60; // Target frame rate
-const COLLISION_TOLERANCE: f32 = 1.0; // Tolerance for edge collisions
+const DESIRED_FPS: u32 = 60;
+const COLLISION_TOLERANCE: f32 = 1.0;
 
 struct GameState {
     player1_y: f32,
@@ -22,8 +24,9 @@ struct GameState {
     ball_dy: f32,
     score1: u32,
     score2: u32,
-    game_running: bool,             // Tracks whether the game is running
-    pressed_keys: HashSet<KeyCode>, // Tracks the keys currently pressed
+    game_running: bool,
+    pressed_keys: HashSet<KeyCode>,
+    last_winner: Option<u8>, // 1 for Player 1, 2 for Player 2
 }
 
 impl GameState {
@@ -31,22 +34,42 @@ impl GameState {
         GameState {
             player1_y: (SCREEN_HEIGHT - PADDLE_HEIGHT) / 2.0,
             player2_y: (SCREEN_HEIGHT - PADDLE_HEIGHT) / 2.0,
-            ball_x: SCREEN_WIDTH / 2.0 - BALL_SIZE / 2.0,
-            ball_y: SCREEN_HEIGHT / 2.0 - BALL_SIZE / 2.0,
+            ball_x: SCREEN_WIDTH / 2.0,
+            ball_y: SCREEN_HEIGHT / 2.0,
             ball_dx: BALL_SPEED,
             ball_dy: BALL_SPEED,
             score1: 0,
             score2: 0,
-            game_running: false, // Start with the game stopped
+            game_running: false,
             pressed_keys: HashSet::new(),
+            last_winner: None,
         }
     }
 
     fn reset_ball(&mut self) {
-        self.ball_x = SCREEN_WIDTH / 2.0 - BALL_SIZE / 2.0;
-        self.ball_y = SCREEN_HEIGHT / 2.0 - BALL_SIZE / 2.0;
-        self.ball_dx = BALL_SPEED;
-        self.ball_dy = BALL_SPEED;
+        let mut rng = rand::thread_rng();
+        self.ball_x = SCREEN_WIDTH / 2.0;
+        self.ball_y = SCREEN_HEIGHT / 2.0;
+
+        // Determine ball direction based on the winner of the previous round
+        self.ball_dx = match self.last_winner {
+            Some(1) => -BALL_SPEED, // Player 1 won, ball moves toward Player 2
+            Some(2) => BALL_SPEED,  // Player 2 won, ball moves toward Player 1
+            _ => {
+                if rng.gen_bool(0.5) {
+                    BALL_SPEED
+                } else {
+                    -BALL_SPEED
+                }
+            } // Random if no winner yet
+        };
+
+        // Randomize the vertical direction
+        self.ball_dy = if rng.gen_bool(0.5) {
+            BALL_SPEED
+        } else {
+            -BALL_SPEED
+        };
     }
 }
 
@@ -56,15 +79,14 @@ impl EventHandler for GameState {
 
         while ggez::timer::check_update_time(ctx, DESIRED_FPS) {
             if self.game_running {
-                // Move player 1 paddle based on key presses
+                // Player 1 paddle movement
                 if self.pressed_keys.contains(&KeyCode::Up) {
-                    self.player1_y -= PADDLE_SPEED * FIXED_TIMESTEP;
-                    self.player1_y = self.player1_y.max(0.0); // Prevent going off top
+                    self.player1_y -= PLAYER_PADDLE_SPEED * FIXED_TIMESTEP;
+                    self.player1_y = self.player1_y.max(0.0);
                 }
                 if self.pressed_keys.contains(&KeyCode::Down) {
-                    self.player1_y += PADDLE_SPEED * FIXED_TIMESTEP;
+                    self.player1_y += PLAYER_PADDLE_SPEED * FIXED_TIMESTEP;
                     self.player1_y = self.player1_y.min(SCREEN_HEIGHT - PADDLE_HEIGHT);
-                    // Prevent going off bottom
                 }
 
                 // Ball movement
@@ -72,42 +94,52 @@ impl EventHandler for GameState {
                 self.ball_y += self.ball_dy * FIXED_TIMESTEP;
 
                 // Ball collision with top and bottom
-                if self.ball_y <= COLLISION_TOLERANCE {
-                    self.ball_y = COLLISION_TOLERANCE; // Snap to edge
-                    self.ball_dy = self.ball_dy.abs(); // Reflect downwards
-                } else if self.ball_y + BALL_SIZE >= SCREEN_HEIGHT - COLLISION_TOLERANCE {
-                    self.ball_y = SCREEN_HEIGHT - BALL_SIZE - COLLISION_TOLERANCE; // Snap to edge
-                    self.ball_dy = -self.ball_dy.abs(); // Reflect upwards
+                if self.ball_y - BALL_RADIUS <= COLLISION_TOLERANCE {
+                    self.ball_y = BALL_RADIUS + COLLISION_TOLERANCE;
+                    self.ball_dy = self.ball_dy.abs();
+                } else if self.ball_y + BALL_RADIUS >= SCREEN_HEIGHT - COLLISION_TOLERANCE {
+                    self.ball_y = SCREEN_HEIGHT - BALL_RADIUS - COLLISION_TOLERANCE;
+                    self.ball_dy = -self.ball_dy.abs();
                 }
 
-                // Ball collision with paddles
-                if (self.ball_x <= PADDLE_WIDTH
-                    && self.ball_y + BALL_SIZE >= self.player1_y
-                    && self.ball_y <= self.player1_y + PADDLE_HEIGHT)
-                    || (self.ball_x + BALL_SIZE >= SCREEN_WIDTH - PADDLE_WIDTH
-                        && self.ball_y + BALL_SIZE >= self.player2_y
-                        && self.ball_y <= self.player2_y + PADDLE_HEIGHT)
+                // Ball collision with Player 1 paddle
+                if self.ball_x - BALL_RADIUS <= PADDLE_WIDTH
+                    && self.ball_y >= self.player1_y
+                    && self.ball_y <= self.player1_y + PADDLE_HEIGHT
                 {
-                    self.ball_dx = -self.ball_dx;
+                    self.ball_dx = self.ball_dx.abs();
+                }
+
+                // Ball collision with AI paddle
+                if self.ball_x + BALL_RADIUS >= SCREEN_WIDTH - PADDLE_WIDTH
+                    && self.ball_y >= self.player2_y
+                    && self.ball_y <= self.player2_y + PADDLE_HEIGHT
+                {
+                    self.ball_dx = -self.ball_dx.abs();
                 }
 
                 // Ball out of bounds
-                if self.ball_x <= 0.0 {
+                if self.ball_x - BALL_RADIUS <= 0.0 {
                     self.score2 += 1;
+                    self.last_winner = Some(2);
                     self.reset_ball();
-                } else if self.ball_x + BALL_SIZE >= SCREEN_WIDTH {
+                } else if self.ball_x + BALL_RADIUS >= SCREEN_WIDTH {
                     self.score1 += 1;
+                    self.last_winner = Some(1);
                     self.reset_ball();
                 }
 
-                // Player 2 AI
-                if self.ball_y > self.player2_y + PADDLE_HEIGHT / 2.0 {
-                    self.player2_y += PADDLE_SPEED * FIXED_TIMESTEP;
-                    self.player2_y = self.player2_y.min(SCREEN_HEIGHT - PADDLE_HEIGHT);
-                // Prevent going off bottom
-                } else if self.ball_y < self.player2_y + PADDLE_HEIGHT / 2.0 {
-                    self.player2_y -= PADDLE_SPEED * FIXED_TIMESTEP;
-                    self.player2_y = self.player2_y.max(0.0); // Prevent going off top
+                // AI Paddle movement
+                if self.ball_dx > 0.0 {
+                    let paddle_center = self.player2_y + PADDLE_HEIGHT / 2.0;
+
+                    if self.ball_y > paddle_center + 10.0 {
+                        self.player2_y += AI_PADDLE_SPEED * FIXED_TIMESTEP;
+                        self.player2_y = self.player2_y.min(SCREEN_HEIGHT - PADDLE_HEIGHT);
+                    } else if self.ball_y < paddle_center - 10.0 {
+                        self.player2_y -= AI_PADDLE_SPEED * FIXED_TIMESTEP;
+                        self.player2_y = self.player2_y.max(0.0);
+                    }
                 }
             }
         }
@@ -116,34 +148,43 @@ impl EventHandler for GameState {
     }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
-        graphics::clear(ctx, Color::from_rgb(30, 30, 30)); // Dark background
+        graphics::clear(ctx, Color::from_rgb(30, 30, 30));
 
-        // Draw paddles
-        let paddle1 = Mesh::new_rectangle(
+        let paddle1 = MeshBuilder::new()
+            .rounded_rectangle(
+                graphics::DrawMode::fill(),
+                graphics::Rect::new(0.0, self.player1_y, PADDLE_WIDTH, PADDLE_HEIGHT),
+                5.0,
+                Color::from_rgb(0, 255, 0),
+            )?
+            .build(ctx)?;
+
+        let paddle2 = MeshBuilder::new()
+            .rounded_rectangle(
+                graphics::DrawMode::fill(),
+                graphics::Rect::new(
+                    SCREEN_WIDTH - PADDLE_WIDTH,
+                    self.player2_y,
+                    PADDLE_WIDTH,
+                    PADDLE_HEIGHT,
+                ),
+                5.0,
+                Color::from_rgb(0, 0, 255),
+            )?
+            .build(ctx)?;
+
+        let ball = Mesh::new_circle(
             ctx,
             graphics::DrawMode::fill(),
-            Rect::new(0.0, self.player1_y, PADDLE_WIDTH, PADDLE_HEIGHT),
-            Color::from_rgb(0, 255, 0), // Green paddle
-        )?;
-        let paddle2 = Mesh::new_rectangle(
-            ctx,
-            graphics::DrawMode::fill(),
-            Rect::new(
-                SCREEN_WIDTH - PADDLE_WIDTH,
-                self.player2_y,
-                PADDLE_WIDTH,
-                PADDLE_HEIGHT,
-            ),
-            Color::from_rgb(0, 0, 255), // Blue paddle
-        )?;
-        let ball = Mesh::new_rectangle(
-            ctx,
-            graphics::DrawMode::fill(),
-            Rect::new(self.ball_x, self.ball_y, BALL_SIZE, BALL_SIZE),
-            Color::from_rgb(255, 255, 0), // Yellow ball
+            ggez::mint::Point2 {
+                x: self.ball_x,
+                y: self.ball_y,
+            },
+            BALL_RADIUS,
+            0.1,
+            Color::from_rgb(255, 255, 0),
         )?;
 
-        // Draw score
         let score_display = Text::new(format!(
             "Player 1: {}  |  Player 2: {}",
             self.score1, self.score2
@@ -176,8 +217,8 @@ impl EventHandler for GameState {
         _repeat: bool,
     ) {
         match keycode {
-            KeyCode::S => self.game_running = true,  // Start game
-            KeyCode::P => self.game_running = false, // Stop game
+            KeyCode::S => self.game_running = true,
+            KeyCode::P => self.game_running = false,
             _ => {
                 self.pressed_keys.insert(keycode);
             }
