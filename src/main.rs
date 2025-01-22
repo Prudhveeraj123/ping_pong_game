@@ -111,7 +111,7 @@ impl EventHandler for GameState {
             }
         }
 
-        if self.game_running && self.countdown_start.is_none() {
+        if self.game_running {
             // Player 1 paddle movement
             if self.pressed_keys.contains(&KeyCode::Up) {
                 self.player1_y -= PLAYER_PADDLE_SPEED * delta;
@@ -122,62 +122,64 @@ impl EventHandler for GameState {
                 self.player1_y = self.player1_y.min(SCREEN_HEIGHT - PADDLE_HEIGHT);
             }
 
-            // Ball movement
-            self.ball_x += self.ball_dx * delta;
-            self.ball_y += self.ball_dy * delta;
+            if self.countdown_start.is_none() {
+                // Ball movement
+                self.ball_x += self.ball_dx * delta;
+                self.ball_y += self.ball_dy * delta;
 
-            // Handle ball collision with walls
-            if self.ball_y - BALL_RADIUS <= COLLISION_TOLERANCE {
-                self.ball_y = BALL_RADIUS + COLLISION_TOLERANCE;
-                self.ball_dy = self.ball_dy.abs();
-            } else if self.ball_y + BALL_RADIUS >= SCREEN_HEIGHT - COLLISION_TOLERANCE {
-                self.ball_y = SCREEN_HEIGHT - BALL_RADIUS - COLLISION_TOLERANCE;
-                self.ball_dy = -self.ball_dy.abs();
-            }
+                // Handle ball collision with walls
+                if self.ball_y - BALL_RADIUS <= COLLISION_TOLERANCE {
+                    self.ball_y = BALL_RADIUS + COLLISION_TOLERANCE;
+                    self.ball_dy = self.ball_dy.abs();
+                } else if self.ball_y + BALL_RADIUS >= SCREEN_HEIGHT - COLLISION_TOLERANCE {
+                    self.ball_y = SCREEN_HEIGHT - BALL_RADIUS - COLLISION_TOLERANCE;
+                    self.ball_dy = -self.ball_dy.abs();
+                }
 
-            // Ball collision with paddles
-            if self.ball_x - BALL_RADIUS <= PADDLE_WIDTH
-                && self.ball_y >= self.player1_y
-                && self.ball_y <= self.player1_y + PADDLE_HEIGHT
-            {
-                self.ball_dx = self.ball_dx.abs();
-            }
+                // Ball collision with paddles
+                if self.ball_x - BALL_RADIUS <= PADDLE_WIDTH
+                    && self.ball_y >= self.player1_y
+                    && self.ball_y <= self.player1_y + PADDLE_HEIGHT
+                {
+                    self.ball_dx = self.ball_dx.abs();
+                }
 
-            if self.ball_x + BALL_RADIUS >= SCREEN_WIDTH - PADDLE_WIDTH
-                && self.ball_y >= self.player2_y
-                && self.ball_y <= self.player2_y + PADDLE_HEIGHT
-            {
-                self.ball_dx = -self.ball_dx.abs();
-            }
+                if self.ball_x + BALL_RADIUS >= SCREEN_WIDTH - PADDLE_WIDTH
+                    && self.ball_y >= self.player2_y
+                    && self.ball_y <= self.player2_y + PADDLE_HEIGHT
+                {
+                    self.ball_dx = -self.ball_dx.abs();
+                }
 
-            // Ball out of bounds
-            if self.ball_x - BALL_RADIUS <= 0.0 {
-                self.score2 += 1;
-                self.last_winner = Some(2);
-                self.score_flash_winner = Some(2);
-                self.reset_ball();
-            } else if self.ball_x + BALL_RADIUS >= SCREEN_WIDTH {
-                self.score1 += 1;
-                self.last_winner = Some(1);
-                self.score_flash_winner = Some(1);
-                self.reset_ball();
-            }
+                // Ball out of bounds
+                if self.ball_x - BALL_RADIUS <= 0.0 {
+                    self.score2 += 1;
+                    self.last_winner = Some(2);
+                    self.score_flash_winner = Some(2);
+                    self.reset_ball();
+                } else if self.ball_x + BALL_RADIUS >= SCREEN_WIDTH {
+                    self.score1 += 1;
+                    self.last_winner = Some(1);
+                    self.score_flash_winner = Some(1);
+                    self.reset_ball();
+                }
 
-            // AI Paddle movement
-            if self.ball_dx > 0.0 {
-                let paddle_center = self.player2_y + PADDLE_HEIGHT / 2.0;
+                // AI Paddle movement
+                if self.ball_dx > 0.0 {
+                    let paddle_center = self.player2_y + PADDLE_HEIGHT / 2.0;
 
-                let reaction_speed = AI_PADDLE_SPEED - 10.0;
-                let mut rng = rand::thread_rng();
-                let hesitation = if rng.gen_bool(0.08) { 0.0 } else { 1.0 };
-                let error_margin: f32 = rng.gen_range(-3.0..3.0);
+                    let reaction_speed = AI_PADDLE_SPEED - 10.0;
+                    let mut rng = rand::thread_rng();
+                    let hesitation = if rng.gen_bool(0.08) { 0.0 } else { 1.0 };
+                    let error_margin: f32 = rng.gen_range(-3.0..3.0);
 
-                if self.ball_y + error_margin > paddle_center {
-                    self.player2_y += reaction_speed * hesitation * delta;
-                    self.player2_y = self.player2_y.min(SCREEN_HEIGHT - PADDLE_HEIGHT);
-                } else if self.ball_y + error_margin < paddle_center {
-                    self.player2_y -= reaction_speed * hesitation * delta;
-                    self.player2_y = self.player2_y.max(0.0);
+                    if self.ball_y + error_margin > paddle_center {
+                        self.player2_y += reaction_speed * hesitation * delta;
+                        self.player2_y = self.player2_y.min(SCREEN_HEIGHT - PADDLE_HEIGHT);
+                    } else if self.ball_y + error_margin < paddle_center {
+                        self.player2_y -= reaction_speed * hesitation * delta;
+                        self.player2_y = self.player2_y.max(0.0);
+                    }
                 }
             }
         }
@@ -405,4 +407,4 @@ fn main() -> GameResult {
     event::run(ctx, event_loop, game)
 }
 
-// added highlighting scores and countdown
+// user can move paddle during countdown as well.
