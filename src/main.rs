@@ -1,5 +1,5 @@
 use ggez::event::{self, EventHandler, KeyCode, KeyMods};
-use ggez::graphics::{self, Color, DrawParam, Mesh, Rect};
+use ggez::graphics::{self, Color, DrawParam, Mesh, Rect, Text};
 use ggez::{Context, ContextBuilder, GameResult};
 
 const SCREEN_WIDTH: f32 = 800.0;
@@ -17,6 +17,8 @@ struct GameState {
     ball_y: f32,
     ball_dx: f32,
     ball_dy: f32,
+    score1: u32,
+    score2: u32,
 }
 
 impl GameState {
@@ -28,6 +30,8 @@ impl GameState {
             ball_y: SCREEN_HEIGHT / 2.0 - BALL_SIZE / 2.0,
             ball_dx: BALL_SPEED,
             ball_dy: BALL_SPEED,
+            score1: 0,
+            score2: 0,
         }
     }
 }
@@ -57,10 +61,12 @@ impl EventHandler for GameState {
         }
 
         // Ball out of bounds
-        if self.ball_x <= 0.0 || self.ball_x + BALL_SIZE >= SCREEN_WIDTH {
-            self.ball_dx = -self.ball_dx;
-            self.ball_x = SCREEN_WIDTH / 2.0 - BALL_SIZE / 2.0;
-            self.ball_y = SCREEN_HEIGHT / 2.0 - BALL_SIZE / 2.0;
+        if self.ball_x <= 0.0 {
+            self.score2 += 1;
+            self.reset_ball();
+        } else if self.ball_x + BALL_SIZE >= SCREEN_WIDTH {
+            self.score1 += 1;
+            self.reset_ball();
         }
 
         // Player 2 AI
@@ -74,14 +80,14 @@ impl EventHandler for GameState {
     }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
-        graphics::clear(ctx, Color::BLACK);
+        graphics::clear(ctx, Color::from_rgb(30, 30, 30)); // Dark background
 
         // Draw paddles
         let paddle1 = Mesh::new_rectangle(
             ctx,
             graphics::DrawMode::fill(),
             Rect::new(0.0, self.player1_y, PADDLE_WIDTH, PADDLE_HEIGHT),
-            Color::WHITE,
+            Color::from_rgb(0, 255, 0), // Green paddle
         )?;
         let paddle2 = Mesh::new_rectangle(
             ctx,
@@ -92,13 +98,30 @@ impl EventHandler for GameState {
                 PADDLE_WIDTH,
                 PADDLE_HEIGHT,
             ),
-            Color::WHITE,
+            Color::from_rgb(0, 0, 255), // Blue paddle
         )?;
         let ball = Mesh::new_rectangle(
             ctx,
             graphics::DrawMode::fill(),
             Rect::new(self.ball_x, self.ball_y, BALL_SIZE, BALL_SIZE),
-            Color::WHITE,
+            Color::from_rgb(255, 255, 0), // Yellow ball
+        )?;
+
+        // Draw score
+        let score_display = Text::new(format!(
+            "Player 1: {}  |  Player 2: {}",
+            self.score1, self.score2
+        ));
+        graphics::draw(
+            ctx,
+            &score_display,
+            (
+                ggez::mint::Point2 {
+                    x: SCREEN_WIDTH / 2.0 - 100.0,
+                    y: 20.0,
+                },
+                Color::WHITE,
+            ),
         )?;
 
         graphics::draw(ctx, &paddle1, DrawParam::default())?;
@@ -121,6 +144,14 @@ impl EventHandler for GameState {
             KeyCode::Down => self.player1_y += PADDLE_SPEED / 60.0,
             _ => {}
         }
+    }
+}
+
+impl GameState {
+    fn reset_ball(&mut self) {
+        self.ball_x = SCREEN_WIDTH / 2.0 - BALL_SIZE / 2.0;
+        self.ball_y = SCREEN_HEIGHT / 2.0 - BALL_SIZE / 2.0;
+        self.ball_dx = -self.ball_dx;
     }
 }
 
