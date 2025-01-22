@@ -93,7 +93,7 @@ impl EventHandler for GameState {
                 self.ball_x += self.ball_dx * FIXED_TIMESTEP;
                 self.ball_y += self.ball_dy * FIXED_TIMESTEP;
 
-                // Ball collision with top and bottom
+                // Handle ball collision with walls
                 if self.ball_y - BALL_RADIUS <= COLLISION_TOLERANCE {
                     self.ball_y = BALL_RADIUS + COLLISION_TOLERANCE;
                     self.ball_dy = self.ball_dy.abs();
@@ -102,7 +102,7 @@ impl EventHandler for GameState {
                     self.ball_dy = -self.ball_dy.abs();
                 }
 
-                // Ball collision with Player 1 paddle
+                // Ball collision with paddles
                 if self.ball_x - BALL_RADIUS <= PADDLE_WIDTH
                     && self.ball_y >= self.player1_y
                     && self.ball_y <= self.player1_y + PADDLE_HEIGHT
@@ -110,7 +110,6 @@ impl EventHandler for GameState {
                     self.ball_dx = self.ball_dx.abs();
                 }
 
-                // Ball collision with AI paddle
                 if self.ball_x + BALL_RADIUS >= SCREEN_WIDTH - PADDLE_WIDTH
                     && self.ball_y >= self.player2_y
                     && self.ball_y <= self.player2_y + PADDLE_HEIGHT
@@ -129,15 +128,25 @@ impl EventHandler for GameState {
                     self.reset_ball();
                 }
 
-                // AI Paddle movement
+                // AI Paddle movement with less hesitation and more precision
                 if self.ball_dx > 0.0 {
                     let paddle_center = self.player2_y + PADDLE_HEIGHT / 2.0;
 
-                    if self.ball_y > paddle_center + 10.0 {
-                        self.player2_y += AI_PADDLE_SPEED * FIXED_TIMESTEP;
+                    // Adjust reaction speed and introduce less hesitation
+                    let reaction_speed = AI_PADDLE_SPEED - 10.0; // Slightly faster speed
+                    let mut rng = rand::thread_rng();
+
+                    // Reduce hesitation probability to 5%
+                    let hesitation = if rng.gen_bool(0.07) { 0.0 } else { 1.0 };
+
+                    // Reduce error margin for more precise movement
+                    let error_margin: f32 = rng.gen_range(-3.0..3.0);
+
+                    if self.ball_y + error_margin > paddle_center {
+                        self.player2_y += reaction_speed * hesitation * FIXED_TIMESTEP;
                         self.player2_y = self.player2_y.min(SCREEN_HEIGHT - PADDLE_HEIGHT);
-                    } else if self.ball_y < paddle_center - 10.0 {
-                        self.player2_y -= AI_PADDLE_SPEED * FIXED_TIMESTEP;
+                    } else if self.ball_y + error_margin < paddle_center {
+                        self.player2_y -= reaction_speed * hesitation * FIXED_TIMESTEP;
                         self.player2_y = self.player2_y.max(0.0);
                     }
                 }
@@ -150,6 +159,7 @@ impl EventHandler for GameState {
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
         graphics::clear(ctx, Color::from_rgb(30, 30, 30));
 
+        // Draw paddles
         let paddle1 = MeshBuilder::new()
             .rounded_rectangle(
                 graphics::DrawMode::fill(),
@@ -173,6 +183,7 @@ impl EventHandler for GameState {
             )?
             .build(ctx)?;
 
+        // Draw ball
         let ball = Mesh::new_circle(
             ctx,
             graphics::DrawMode::fill(),
@@ -185,6 +196,7 @@ impl EventHandler for GameState {
             Color::from_rgb(255, 255, 0),
         )?;
 
+        // Draw score
         let score_display = Text::new(format!(
             "Player 1: {}  |  Player 2: {}",
             self.score1, self.score2
@@ -239,3 +251,5 @@ fn main() -> GameResult {
     let game = GameState::new();
     event::run(ctx, event_loop, game)
 }
+
+// ai mvoing like human with decent difficulty.
