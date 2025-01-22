@@ -128,18 +128,13 @@ impl EventHandler for GameState {
                     self.reset_ball();
                 }
 
-                // AI Paddle movement with less hesitation and more precision
+                // AI Paddle movement
                 if self.ball_dx > 0.0 {
                     let paddle_center = self.player2_y + PADDLE_HEIGHT / 2.0;
 
-                    // Adjust reaction speed and introduce less hesitation
-                    let reaction_speed = AI_PADDLE_SPEED - 10.0; // Slightly faster speed
+                    let reaction_speed = AI_PADDLE_SPEED - 10.0;
                     let mut rng = rand::thread_rng();
-
-                    // Reduce hesitation probability to 5%
-                    let hesitation = if rng.gen_bool(0.07) { 0.0 } else { 1.0 };
-
-                    // Reduce error margin for more precise movement
+                    let hesitation = if rng.gen_bool(0.08) { 0.0 } else { 1.0 };
                     let error_margin: f32 = rng.gen_range(-3.0..3.0);
 
                     if self.ball_y + error_margin > paddle_center {
@@ -196,7 +191,7 @@ impl EventHandler for GameState {
             Color::from_rgb(255, 255, 0),
         )?;
 
-        // Draw score
+        // Draw score at the top center
         let score_display = Text::new(format!(
             "Player 1: {}  |  Player 2: {}",
             self.score1, self.score2
@@ -206,8 +201,22 @@ impl EventHandler for GameState {
             &score_display,
             (
                 ggez::mint::Point2 {
-                    x: SCREEN_WIDTH / 2.0 - 100.0,
-                    y: 20.0,
+                    x: SCREEN_WIDTH / 2.0 - 100.0, // Center horizontally
+                    y: 20.0,                       // Near the top
+                },
+                Color::WHITE,
+            ),
+        )?;
+
+        // Draw instructions at the bottom center
+        let instructions = Text::new("Press S to Start, Press P to Pause");
+        graphics::draw(
+            ctx,
+            &instructions,
+            (
+                ggez::mint::Point2 {
+                    x: SCREEN_WIDTH / 2.0 - 100.0, // Center horizontally
+                    y: SCREEN_HEIGHT - 40.0,       // Near the bottom
                 },
                 Color::WHITE,
             ),
@@ -252,4 +261,4 @@ fn main() -> GameResult {
     event::run(ctx, event_loop, game)
 }
 
-// ai mvoing like human with decent difficulty.
+// human like ai and press s and p prompts
