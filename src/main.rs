@@ -19,6 +19,7 @@ struct GameState {
     ball_dy: f32,
     score1: u32,
     score2: u32,
+    game_running: bool, // Tracks whether the game is running
 }
 
 impl GameState {
@@ -32,12 +33,24 @@ impl GameState {
             ball_dy: BALL_SPEED,
             score1: 0,
             score2: 0,
+            game_running: false, // Start with the game stopped
         }
+    }
+
+    fn reset_ball(&mut self) {
+        self.ball_x = SCREEN_WIDTH / 2.0 - BALL_SIZE / 2.0;
+        self.ball_y = SCREEN_HEIGHT / 2.0 - BALL_SIZE / 2.0;
+        self.ball_dx = BALL_SPEED;
+        self.ball_dy = BALL_SPEED;
     }
 }
 
 impl EventHandler for GameState {
     fn update(&mut self, ctx: &mut Context) -> GameResult {
+        if !self.game_running {
+            return Ok(()); // Pause game updates when not running
+        }
+
         let delta_time = ggez::timer::delta(ctx).as_secs_f32();
 
         // Move ball
@@ -124,6 +137,32 @@ impl EventHandler for GameState {
             ),
         )?;
 
+        // Draw buttons
+        let start_button = Text::new("Press S to Start");
+        graphics::draw(
+            ctx,
+            &start_button,
+            (
+                ggez::mint::Point2 {
+                    x: 20.0,
+                    y: SCREEN_HEIGHT - 50.0,
+                },
+                Color::WHITE,
+            ),
+        )?;
+        let stop_button = Text::new("Press P to Stop");
+        graphics::draw(
+            ctx,
+            &stop_button,
+            (
+                ggez::mint::Point2 {
+                    x: SCREEN_WIDTH - 150.0,
+                    y: SCREEN_HEIGHT - 50.0,
+                },
+                Color::WHITE,
+            ),
+        )?;
+
         graphics::draw(ctx, &paddle1, DrawParam::default())?;
         graphics::draw(ctx, &paddle2, DrawParam::default())?;
         graphics::draw(ctx, &ball, DrawParam::default())?;
@@ -142,16 +181,10 @@ impl EventHandler for GameState {
         match keycode {
             KeyCode::Up => self.player1_y -= PADDLE_SPEED / 60.0,
             KeyCode::Down => self.player1_y += PADDLE_SPEED / 60.0,
+            KeyCode::S => self.game_running = true, // Start game
+            KeyCode::P => self.game_running = false, // Stop game
             _ => {}
         }
-    }
-}
-
-impl GameState {
-    fn reset_ball(&mut self) {
-        self.ball_x = SCREEN_WIDTH / 2.0 - BALL_SIZE / 2.0;
-        self.ball_y = SCREEN_HEIGHT / 2.0 - BALL_SIZE / 2.0;
-        self.ball_dx = -self.ball_dx;
     }
 }
 
