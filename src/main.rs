@@ -94,9 +94,24 @@ impl EventHandler for GameState {
     fn update(&mut self, ctx: &mut Context) -> GameResult {
         let delta = ggez::timer::delta(ctx).as_secs_f32();
 
-        // Handle countdown timer
+        // Handle countdown timer and AI paddle repositioning
         if let Some(countdown_start) = self.countdown_start {
             let elapsed = countdown_start.elapsed().as_secs_f32();
+
+            // Move AI paddle to middle during countdown
+            let middle_position = (SCREEN_HEIGHT - PADDLE_HEIGHT) / 2.0;
+            let distance_to_middle = middle_position - self.player2_y;
+
+            if distance_to_middle.abs() > 1.0 {
+                let direction = distance_to_middle.signum();
+                self.player2_y += direction * AI_PADDLE_SPEED * delta;
+
+                // Ensure we don't overshoot the middle
+                if (middle_position - self.player2_y).signum() != distance_to_middle.signum() {
+                    self.player2_y = middle_position;
+                }
+            }
+
             if elapsed >= COUNTDOWN_DURATION {
                 self.countdown_start = None;
                 self.start_ball();
@@ -164,7 +179,7 @@ impl EventHandler for GameState {
                     self.reset_ball();
                 }
 
-                // AI Paddle movement
+                // AI Paddle movement (only when not in countdown)
                 if self.ball_dx > 0.0 {
                     let paddle_center = self.player2_y + PADDLE_HEIGHT / 2.0;
 
@@ -407,4 +422,4 @@ fn main() -> GameResult {
     event::run(ctx, event_loop, game)
 }
 
-// user can move paddle during countdown as well.
+// user can move paddle during countdown
