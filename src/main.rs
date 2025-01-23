@@ -4,6 +4,7 @@ use ggez::{event, ContextBuilder};
 mod components;
 mod game;
 mod graphics;
+mod tests;
 
 fn main() -> ggez::GameResult {
     let (ctx, event_loop) = ContextBuilder::new("Ping Pong", "Prudhveraj Botta")

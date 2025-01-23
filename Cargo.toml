@@ -7,3 +7,6 @@ authors = ["Your Name"]
 [dependencies]
 ggez = "0.9"
 rand = "0.8.5"
+
+[dev-dependencies]
+approx = "0.5"
