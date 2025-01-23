@@ -1,0 +1,11 @@
+pub const SCREEN_WIDTH: f32 = 800.0;
+pub const SCREEN_HEIGHT: f32 = 600.0;
+pub const PADDLE_WIDTH: f32 = 15.0;
+pub const PADDLE_HEIGHT: f32 = 100.0;
+pub const BALL_RADIUS: f32 = 10.0;
+pub const PLAYER_PADDLE_SPEED: f32 = 500.0;
+pub const AI_PADDLE_SPEED: f32 = 300.0;
+pub const BALL_SPEED: f32 = 300.0;
+pub const DESIRED_FPS: u32 = 60;
+pub const COLLISION_TOLERANCE: f32 = 1.0;
+pub const COUNTDOWN_DURATION: f32 = 3.0;
