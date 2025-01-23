@@ -3,7 +3,7 @@
 
 /// Width of the game window in pixels
 /// 800 pixels gives a good width for most screens
-pub const SCREEN_WIDTH: f32 = 800.0;
+pub const SCREEN_WIDTH: f32 = 900.0;
 
 /// Height of the game window in pixels
 /// 600 pixels provides a 4:3 aspect ratio with the width
@@ -34,10 +34,6 @@ pub const AI_PADDLE_SPEED: f32 = 300.0;
 /// This is the base speed for both horizontal and vertical movement
 /// 300 pixels/second makes the game challenging but not impossible
 pub const BALL_SPEED: f32 = 300.0;
-
-/// Target frames per second for the game
-/// 60 FPS is standard for smooth gameplay on most displays
-pub const DESIRED_FPS: u32 = 60;
 
 /// Small value used for collision detection to prevent rounding errors
 /// Helps avoid the ball getting stuck in paddles or walls

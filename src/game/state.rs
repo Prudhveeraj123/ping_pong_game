@@ -4,8 +4,8 @@
 use crate::components::{ball::Ball, paddle::Paddle, score::Score}; // Game components
 use crate::game::constants::*; // Game constants like speeds, dimensions
 use crate::graphics::renderer::GameRenderer; // Rendering functionality
-use ggez::event::{self, EventHandler}; // Event handling from ggez
-use ggez::graphics::{self, Canvas, Color, DrawParam, Text, TextFragment}; // Graphics components
+use ggez::event::EventHandler; // Event handling from ggez
+use ggez::graphics::{Canvas, Color, DrawParam, Text, TextFragment}; // Graphics components
 use ggez::input::keyboard::{KeyCode, KeyInput}; // Keyboard input handling
 use rand::Rng; // Random number generation
 use std::collections::HashSet; // For tracking pressed keys

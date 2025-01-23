@@ -1,8 +1,7 @@
 // Import necessary modules and types from other parts of the project and dependencies
 use crate::game::constants::*; // Game constants like screen dimensions, speeds, etc.
 use crate::game::state::GameState; // Main game state struct
-use ggez::graphics::{self, Canvas, Color, DrawParam, Drawable, Text, TextFragment}; // Graphics components from ggez
-use ggez::mint::Point2; // Point type for coordinates
+use ggez::graphics::{Canvas, Color, DrawParam, Text, TextFragment}; // Graphics components from ggez
 use std::time::Instant; // For timing operations
 
 /// GameRenderer struct handles all the drawing operations for the game

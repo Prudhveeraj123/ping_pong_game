@@ -3,12 +3,10 @@
 // Import necessary modules and types
 use crate::game::constants::*; // Game constants for dimensions, speeds, etc.
 use ggez::graphics::{
-    self,
     Color,    // For ball color
     DrawMode, // For specifying how to draw (filled or outlined)
     Mesh,     // For creating drawable shapes
 };
-use rand::Rng; // For generating random directions
 
 /// Represents the ball in the game
 pub struct Ball {
@@ -41,36 +39,6 @@ impl Ball {
     ///   - Some(1): Ball moves towards Player 2
     ///   - Some(2): Ball moves towards Player 1
     ///   - None: Random direction
-    pub fn reset(&mut self, last_winner: Option<u8>) {
-        // Move ball back to center
-        self.x = SCREEN_WIDTH / 2.0;
-        self.y = SCREEN_HEIGHT / 2.0;
-
-        // Create random number generator for direction choices
-        let mut rng = rand::thread_rng();
-
-        // Determine horizontal direction based on who scored last
-        self.dx = match last_winner {
-            Some(1) => -BALL_SPEED, // Move towards Player 1
-            Some(2) => BALL_SPEED,  // Move towards Player 2
-            _ => {
-                // Random horizontal direction if no last winner
-                if rng.gen_bool(0.5) {
-                    BALL_SPEED // Move right
-                } else {
-                    -BALL_SPEED // Move left
-                }
-            }
-        };
-
-        // Randomly choose vertical direction
-        self.dy = if rng.gen_bool(0.5) {
-            BALL_SPEED // Move down
-        } else {
-            -BALL_SPEED // Move up
-        };
-    }
-
     /// Updates ball position based on its velocity
     ///
     /// # Parameters
@@ -102,32 +70,5 @@ impl Ball {
             0.1,         // Tolerance (how smooth the circle looks)
             self.color,  // Ball color (yellow)
         )
-    }
-
-    /// Reverses the horizontal direction of the ball
-    /// Used when the ball hits a paddle
-    pub fn reverse_dx(&mut self) {
-        self.dx = -self.dx; // Flip horizontal velocity
-    }
-
-    /// Reverses the vertical direction of the ball
-    /// Used when the ball hits the top or bottom of the screen
-    pub fn reverse_dy(&mut self) {
-        self.dy = -self.dy; // Flip vertical velocity
-    }
-
-    /// Stops the ball's movement by setting all velocities to 0
-    pub fn stop(&mut self) {
-        self.dx = 0.0; // No horizontal movement
-        self.dy = 0.0; // No vertical movement
-    }
-
-    /// Checks if the ball is currently moving
-    ///
-    /// # Returns
-    /// * `true` if the ball has any velocity (moving)
-    /// * `false` if the ball is completely still
-    pub fn is_moving(&self) -> bool {
-        self.dx != 0.0 || self.dy != 0.0 // True if moving in either direction
     }
 }

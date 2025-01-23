@@ -3,12 +3,10 @@
 // Import necessary modules and constants
 use crate::game::constants::*; // Game constants for dimensions and speeds
 use ggez::graphics::{
-    self,
-    Color,       // For paddle color
-    DrawMode,    // For specifying how to draw (filled or outlined)
-    Mesh,        // For creating drawable shapes
-    MeshBuilder, // For building complex shapes
-    Rect,        // For defining rectangular shapes
+    Color,    // For paddle color
+    DrawMode, // For specifying how to draw (filled or outlined)
+    Mesh,     // For creating drawable shapes
+    Rect,     // For defining rectangular shapes
 };
 use ggez::GameResult; // For error handling
 

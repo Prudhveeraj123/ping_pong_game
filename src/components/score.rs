@@ -2,7 +2,7 @@
 
 // Import necessary modules and types
 use crate::game::constants::*; // Game constants like screen dimensions
-use ggez::graphics::{self, Canvas, Color, DrawParam, Drawable, Text, TextFragment}; // For rendering text
+use ggez::graphics::{Canvas, Color, DrawParam, Text, TextFragment}; // For rendering text
 use ggez::GameResult; // Type for error handling
 use std::time::Instant; // For timing the score highlight effect
 
@@ -157,16 +157,6 @@ impl Score {
         );
 
         Ok(())
-    }
-
-    /// Updates the highlight effect, turning it off after 3 seconds
-    pub fn update(&mut self) {
-        if let Some(flash_start) = self.flash_start {
-            if flash_start.elapsed().as_secs_f32() >= 3.0 {
-                self.flash_winner = None; // Clear winner highlight
-                self.flash_start = None; // Clear highlight timer
-            }
-        }
     }
 
     /// Resets all scores and effects to initial state
