@@ -22,6 +22,7 @@ pub struct GameState {
     pub last_winner: Option<u8>,          // Tracks who scored last (1 or 2)
     pub countdown_start: Option<Instant>, // Timer for countdown between points
     pub point_scored: bool,               // Whether a point was just scored
+    pub should_exit: bool,                // Flag to indicate if game should exit
 }
 
 impl GameState {
@@ -43,6 +44,7 @@ impl GameState {
             last_winner: None,
             countdown_start: None,
             point_scored: false,
+            should_exit: false,
         };
 
         // Set initial ball position to center of screen
@@ -197,7 +199,7 @@ impl GameState {
 
     /// Draws game instructions at the bottom of the screen
     fn draw_instructions(&self, canvas: &mut Canvas, ctx: &mut ggez::Context) -> ggez::GameResult {
-        let instructions = "Press S to Start, R to Reset";
+        let instructions = "Press S to Start, R to Reset, E to Exit";
 
         let text_fragment = TextFragment::new(instructions)
             .scale(14.0)
@@ -223,6 +225,12 @@ impl GameState {
 impl EventHandler for GameState {
     /// Update game state (called each frame)
     fn update(&mut self, ctx: &mut ggez::Context) -> ggez::GameResult {
+        // Check if we should exit the game
+        if self.should_exit {
+            ctx.request_quit();
+            return Ok(());
+        }
+
         let delta = ctx.time.delta().as_secs_f32(); // Time since last frame
 
         // Handle countdown if active
@@ -274,6 +282,10 @@ impl EventHandler for GameState {
                 KeyCode::P => {
                     // Pause game
                     self.game_running = false;
+                }
+                KeyCode::E => {
+                    // Set exit flag
+                    self.should_exit = true;
                 }
                 KeyCode::R => {
                     // Reset everything to initial state
