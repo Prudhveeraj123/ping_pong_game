@@ -1,3 +1,4 @@
+// Importing components used in the game such as Ball (game ball), Paddle (player paddles), and Score (score tracker)
 // Importing modules and components from the crate
 // Ball, Paddle, and Score are game components likely representing game objects
 use crate::components::{ball::Ball, paddle::Paddle, score::Score};
@@ -215,7 +216,7 @@ impl GameState {
             let mut rng = rand::thread_rng(); // Random number generator
 
             let reaction_speed = AI_PADDLE_SPEED - 10.0; // Adjust reaction speed
-            let hesitation = if rng.gen_bool(0.08) { 0.0 } else { 1.0 }; // Simulate hesitation
+            let hesitation = if rng.gen_bool(0.12) { 0.0 } else { 1.0 }; // Simulate hesitation
             let error_margin: f32 = rng.gen_range(-3.0..3.0); // Add random error to movement
 
             // Move the AI paddle up or down based on the ball's position
@@ -348,10 +349,6 @@ impl EventHandler for GameState {
                         self.game_running = true;
                         self.countdown_start = Some(Instant::now());
                     }
-                }
-                KeyCode::P => {
-                    // Pause the game when 'P' is pressed
-                    self.game_running = false;
                 }
                 KeyCode::E => {
                     // Exit the game when 'E' is pressed
