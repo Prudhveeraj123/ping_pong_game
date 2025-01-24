@@ -1,78 +1,56 @@
-//! This file defines the paddle component used by players in the Pong game.
+// This file contains the code for the paddles that players control in the game
 
-// Import necessary modules and constants
-use crate::game::constants::*; // Game constants for dimensions and speeds
+// Import needed tools and settings for our game
+use crate::game::constants::*;
 use ggez::graphics::{
-    Color,    // For paddle color
-    DrawMode, // For specifying how to draw (filled or outlined)
-    Mesh,     // For creating drawable shapes
-    Rect,     // For defining rectangular shapes
+    Color,    // For setting paddle colors
+    DrawMode, // For choosing how shapes are drawn
+    Mesh,     // For creating shapes we can draw
+    Rect,     // For making rectangular shapes
 };
-use ggez::GameResult; // For error handling
+use ggez::GameResult;
 
-/// Represents a paddle in the game
-/// Each player controls a paddle to hit the ball
+// Define what makes up a paddle
 pub struct Paddle {
-    pub x: f32,       // Horizontal position of the paddle (left edge)
-    pub y: f32,       // Vertical position of the paddle (top edge)
-    pub color: Color, // Color of the paddle (defaults to white)
+    pub x: f32,       // Position from left side of screen
+    pub y: f32,       // Position from top of screen
+    pub color: Color, // Paddle's color
 }
 
+// Define what a paddle can do
 impl Paddle {
-    /// Creates a new paddle at the specified position
-    ///
-    /// # Parameters
-    /// * `x`: The horizontal position for the paddle
-    /// * `y`: The vertical position for the paddle
-    ///
-    /// # Returns
-    /// A new Paddle instance positioned at (x, y)
+    // Create a new paddle at a specific position
     pub fn new(x: f32, y: f32) -> Self {
         Paddle {
-            x,                   // Set initial x position
-            y,                   // Set initial y position
-            color: Color::WHITE, // Default color is white
+            x,                   // Set left position
+            y,                   // Set top position
+            color: Color::WHITE, // Make it white
         }
     }
 
-    /// Moves the paddle up or down by the specified amount
-    /// Keeps the paddle within the screen boundaries
-    ///
-    /// # Parameters
-    /// * `amount`: Distance to move (positive = down, negative = up)
-    ///            This will typically be PLAYER_PADDLE_SPEED * delta_time
+    // Move the paddle up or down while keeping it on screen
     pub fn move_by(&mut self, amount: f32) {
-        // Add the movement amount to current y position
+        // Update paddle position
         self.y += amount;
 
-        // Clamp the paddle position to keep it on screen
-        // If y < 0, sets to 0
-        // If y > screen_height - paddle_height, sets to that value
-        // This prevents the paddle from moving off the top or bottom of the screen
+        // Keep paddle within screen boundaries
         self.y = self.y.clamp(0.0, SCREEN_HEIGHT - PADDLE_HEIGHT);
     }
 
-    /// Creates a mesh (drawable shape) for the paddle
-    /// This mesh is what actually gets drawn to the screen
-    ///
-    /// # Parameters
-    /// * `ctx`: The GGEZ graphics context needed for creating meshes
-    ///
-    /// # Returns
-    /// * A Result containing either the paddle mesh or an error
+    // Create the actual shape that will be drawn on screen
     pub fn get_mesh(&self, ctx: &mut ggez::Context) -> GameResult<Mesh> {
-        // Create a new rounded rectangle mesh for the paddle
+        // Make a rounded rectangle for the paddle
         Mesh::new_rounded_rectangle(
             ctx,
-            DrawMode::fill(), // Make the paddle filled (not just an outline)
+            DrawMode::fill(), // Make it solid, not hollow
             Rect::new(
-                self.x,        // Left edge position
-                self.y,        // Top edge position
-                PADDLE_WIDTH,  // Width from constants
-                PADDLE_HEIGHT, // Height from constants
+                self.x,        // Left edge
+                self.y,        // Top edge
+                PADDLE_WIDTH,  // How wide
+                PADDLE_HEIGHT, // How tall
             ),
-            5.0,        // Corner radius (makes the corners rounded)
-            self.color, // Paddle color (white by default)
+            5.0,        // How rounded the corners are
+            self.color, // What color to use
         )
     }
 }

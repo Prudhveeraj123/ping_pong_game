@@ -1,74 +1,62 @@
-//! This file defines the ball component for the Pong game, controlling its movement and appearance
+//! This is the main file that controls how the ball works in our Pong game
+//! It handles everything about the ball - where it is, how it moves, and how it looks
 
-// Import necessary modules and types
-use crate::game::constants::*; // Game constants for dimensions, speeds, etc.
+// First, we need to bring in some useful tools from other parts of our code
+use crate::game::constants::*; // This gives us access to important game settings like screen size
 use ggez::graphics::{
-    Color,    // For ball color
-    DrawMode, // For specifying how to draw (filled or outlined)
-    Mesh,     // For creating drawable shapes
+    Color,    // Lets us set colors (like making the ball yellow)
+    DrawMode, // Helps us choose if shapes should be filled in or just outlined
+    Mesh,     // Lets us create shapes we can draw on the screen
 };
 
-/// Represents the ball in the game
+// This is like a blueprint for our ball - it stores all the important information about it
 pub struct Ball {
-    pub x: f32,  // Horizontal position of the ball's center
-    pub y: f32,  // Vertical position of the ball's center
-    pub dx: f32, // Horizontal velocity (speed and direction)
-    // Positive = moving right, Negative = moving left
-    pub dy: f32, // Vertical velocity (speed and direction)
-    // Positive = moving down, Negative = moving up
-    pub color: Color, // Ball color
+    pub x: f32,  // Where the ball is from left to right (higher = more right)
+    pub y: f32,  // Where the ball is from top to bottom (higher = more down)
+    pub dx: f32, // How fast the ball is moving left or right
+    // (positive = moving right, negative = moving left)
+    pub dy: f32, // How fast the ball is moving up or down
+    // (positive = moving down, negative = moving up)
+    pub color: Color, // What color the ball should be
 }
 
+// Here we define all the things our ball can do
 impl Ball {
-    /// Creates a new ball in the center of the screen
-    /// Initially, the ball is stationary (dx and dy are 0)
+    // This function creates a new ball in the middle of the screen
     pub fn new() -> Self {
         Ball {
-            x: SCREEN_WIDTH / 2.0,               // Place ball at horizontal center
-            y: SCREEN_HEIGHT / 2.0,              // Place ball at vertical center
-            dx: 0.0,                             // No initial horizontal movement
-            dy: 0.0,                             // No initial vertical movement
-            color: Color::from_rgb(255, 255, 0), // Yellow color
+            x: SCREEN_WIDTH / 2.0,               // Put the ball in the middle horizontally
+            y: SCREEN_HEIGHT / 2.0,              // Put the ball in the middle vertically
+            dx: 0.0,                             // Start with the ball not moving left or right
+            dy: 0.0,                             // Start with the ball not moving up or down
+            color: Color::from_rgb(255, 255, 0), // Make the ball yellow
         }
     }
 
-    /// Resets the ball to center and gives it a new direction
-    ///
-    /// # Parameters
-    /// * `last_winner`: Indicates which player scored last (affects initial direction)
-    ///   - Some(1): Ball moves towards Player 2
-    ///   - Some(2): Ball moves towards Player 1
-    ///   - None: Random direction
-    /// Updates ball position based on its velocity
-    ///
-    /// # Parameters
-    /// * `delta`: Time since last frame (for smooth movement)
+    // This function moves the ball based on how much time has passed
     pub fn update(&mut self, delta: f32) {
-        // Move ball horizontally based on speed and time
+        // Move the ball horizontally:
+        // New position = current position + (speed × time passed)
         self.x += self.dx * delta;
-        // Move ball vertically based on speed and time
+
+        // Move the ball vertically:
+        // New position = current position + (speed × time passed)
         self.y += self.dy * delta;
     }
 
-    /// Creates a circular mesh (drawable shape) for the ball
-    ///
-    /// # Parameters
-    /// * `ctx`: The GGEZ graphics context needed for creating meshes
-    ///
-    /// # Returns
-    /// * A Result containing either the ball mesh or an error
+    // This function creates the actual circle shape that will be drawn on the screen
     pub fn get_mesh(&self, ctx: &mut ggez::Context) -> ggez::GameResult<Mesh> {
+        // Create a new circle shape with these settings:
         Mesh::new_circle(
             ctx,
-            DrawMode::fill(), // Make the ball filled (not just an outline)
+            DrawMode::fill(), // Make it a solid circle (not just an outline)
             ggez::mint::Point2 {
-                // Center point of the circle
-                x: self.x, // Ball's horizontal position
-                y: self.y, // Ball's vertical position
+                x: self.x, // Place it at the ball's current horizontal position
+                y: self.y, // Place it at the ball's current vertical position
             },
-            BALL_RADIUS, // Size of the ball
-            0.1,         // Tolerance (how smooth the circle looks)
-            self.color,  // Ball color (yellow)
+            BALL_RADIUS, // Make it this big (size comes from our game settings)
+            0.1,         // How smooth to make the circle (lower = smoother)
+            self.color,  // Color it yellow (or whatever color we set)
         )
     }
 }

@@ -1,42 +1,34 @@
-// Import necessary modules and types from other parts of the project and dependencies
-use crate::game::constants::*; // Game constants like screen dimensions, speeds, etc.
-use crate::game::state::GameState; // Main game state struct
-use ggez::graphics::{Canvas, Color, DrawParam, Text, TextFragment}; // Graphics components from ggez
-use std::time::Instant; // For timing operations
+// Bring in needed functions and types for drawing the game
+use crate::game::constants::*;
+use crate::game::state::GameState;
+use ggez::graphics::{Canvas, Color, DrawParam, Text, TextFragment};
+use std::time::Instant;
 
-/// GameRenderer struct handles all the drawing operations for the game
-/// It takes a mutable reference to the ggez Context which is needed for rendering
+// This struct handles all the drawing in the game
 pub struct GameRenderer<'a> {
-    ctx: &'a mut ggez::Context,
+    ctx: &'a mut ggez::Context, // Stores drawing tools
 }
 
 impl<'a> GameRenderer<'a> {
-    /// Creates a new GameRenderer instance
-    /// Parameters:
-    ///   - ctx: The ggez graphics context used for rendering
+    // Create new renderer with drawing tools
     pub fn new(ctx: &'a mut ggez::Context) -> Self {
         GameRenderer { ctx }
     }
 
-    /// Main render function that draws all game elements
-    /// Parameters:
-    ///   - canvas: The canvas to draw on
-    ///   - state: Current game state containing all game objects
+    // Main function that draws everything in the game
     pub fn render(&mut self, canvas: &mut Canvas, state: &GameState) -> ggez::GameResult {
-        // Draw the paddles first
+        // First draw the paddles
         self.draw_paddles(canvas, state)?;
 
-        // Draw ball in these conditions:
-        // 1. Before game starts (game_running is false)
-        // 2. During gameplay when there's no countdown
+        // Draw ball except during countdown
         if !state.game_running || state.countdown_start.is_none() {
             self.draw_ball(canvas, state)?;
         }
 
-        // Draw the score
+        // Draw the score at the top
         state.score.draw(canvas, self.ctx)?;
 
-        // Only show countdown during gameplay (when game_running is true)
+        // Show countdown if game is running
         if state.game_running {
             if let Some(countdown_start) = state.countdown_start {
                 self.draw_countdown(canvas, countdown_start)?;
@@ -46,19 +38,16 @@ impl<'a> GameRenderer<'a> {
         Ok(())
     }
 
-    /// Draws both player paddles
-    /// Parameters:
-    ///   - canvas: The canvas to draw on
-    ///   - state: Current game state containing paddle information
+    // Draw both player paddles - green for left, blue for right
     fn draw_paddles(&mut self, canvas: &mut Canvas, state: &GameState) -> ggez::GameResult {
-        // Draw player 1's paddle (left side) in green
+        // Create and draw left paddle in green
         let paddle1_mesh = state.player1.get_mesh(self.ctx)?;
         canvas.draw(
             &paddle1_mesh,
             DrawParam::default().color(Color::from_rgb(0, 255, 0)),
         );
 
-        // Draw player 2's paddle (right side) in blue
+        // Create and draw right paddle in blue
         let paddle2_mesh = state.player2.get_mesh(self.ctx)?;
         canvas.draw(
             &paddle2_mesh,
@@ -68,31 +57,26 @@ impl<'a> GameRenderer<'a> {
         Ok(())
     }
 
-    /// Draws the ball
-    /// Parameters:
-    ///   - canvas: The canvas to draw on
-    ///   - state: Current game state containing ball information
+    // Draw the ball in yellow
     fn draw_ball(&mut self, canvas: &mut Canvas, state: &GameState) -> ggez::GameResult {
-        // Create the ball mesh and draw it in yellow
         let ball_mesh = state.ball.get_mesh(self.ctx)?;
         canvas.draw(&ball_mesh, DrawParam::default().color(Color::YELLOW));
         Ok(())
     }
 
-    /// Draws the countdown numbers (3,2,1) before each point starts
-    /// Parameters:
-    ///   - canvas: The canvas to draw on
-    ///   - countdown_start: The instant when countdown started
+    // Draw countdown numbers in different colors
     fn draw_countdown(
         &mut self,
         canvas: &mut Canvas,
         countdown_start: Instant,
     ) -> ggez::GameResult {
-        // Calculate how much time has passed since countdown started
+        // Get time passed since countdown started
         let elapsed = countdown_start.elapsed().as_secs_f32();
 
-        // Determine which number to show based on elapsed time
-        // Each number shows for 1 second
+        // Show different numbers based on time:
+        // 0-1 sec: show 3
+        // 1-2 sec: show 2
+        // 2-3 sec: show 1
         let count = if elapsed < 1.0 {
             3
         } else if elapsed < 2.0 {
@@ -100,30 +84,30 @@ impl<'a> GameRenderer<'a> {
         } else if elapsed < 3.0 {
             1
         } else {
-            0 // Countdown is finished
+            0
         };
 
-        // Only draw numbers 3,2,1 (not 0)
+        // Only show numbers 3,2,1
         if count > 0 {
-            // Choose color based on the current number
+            // Pick color for current number:
+            // 3 = red, 2 = yellow, 1 = green
             let color = match count {
-                3 => Color::RED,    // 3 is shown in red
-                2 => Color::YELLOW, // 2 is shown in yellow
-                1 => Color::GREEN,  // 1 is shown in green
-                _ => Color::WHITE,  // Fallback color (shouldn't occur)
+                3 => Color::RED,
+                2 => Color::YELLOW,
+                1 => Color::GREEN,
+                _ => Color::WHITE,
             };
 
-            // Create the text with the countdown number
+            // Create number text with chosen color
             let fragment = TextFragment::new(count.to_string())
-                .scale(35.0) // Size of the countdown text
+                .scale(35.0)
                 .color(color);
 
+            // Set up text for drawing
             let countdown_text = Text::new(fragment);
-
-            // Calculate dimensions to center the text
             let dims = countdown_text.measure(self.ctx)?;
 
-            // Draw the countdown text centered on screen
+            // Draw number in center of screen
             canvas.draw(
                 &countdown_text,
                 DrawParam::default().dest([
